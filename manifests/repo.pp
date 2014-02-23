@@ -17,10 +17,12 @@
 # Author: François Charlier <francois.charlier@enovance.com>
 # Author: David Moreau Simard <dmsimard@iweb.com>
 # Author: Andrew Woodward <xarses>
+# Author: Ricardo Rocha <ricardo@catalyst.net.nz>
 #
 class ceph::repo (
   $ensure  = present,
-  $release = 'emperor'
+  $release = 'emperor',
+  $extras  = false,
 ) {
   case $::osfamily {
     'Debian': {
@@ -37,6 +39,17 @@ class ceph::repo (
         location => "http://ceph.com/debian-${release}/",
         release  => $::lsbdistcodename,
         require  => Apt::Key['ceph'],
+      }
+
+      if $extras {
+
+        apt::source { 'ceph-extras':
+          ensure   => $ensure,
+          location => "http://ceph.com/packages/ceph-extras/debian/",
+          release  => $::lsbdistcodename,
+          require  => Apt::Key['ceph'],
+        }
+
       }
 
       Exec['apt_update'] -> Package<||>
@@ -71,6 +84,19 @@ class ceph::repo (
         gpgcheck   => '1',
         gpgkey     => 'https://ceph.com/git/?p=ceph.git;a=blob_plain;f=keys/release.asc',
         mirrorlist => absent,
+      }
+
+      if $extras {
+
+        yumrepo { 'ceph-extras':
+          descr      => "Ceph Extras",
+          name       => "ceph-extras",
+          baseurl    => "http://ceph.com/packages/ceph-extras/rpm/rhel6/\${basearch}",
+          gpgcheck   => '1',
+          gpgkey     => 'https://ceph.com/git/?p=ceph.git;a=blob_plain;f=keys/release.asc',
+          mirrorlist => absent,
+        }
+
       }
     }
 
